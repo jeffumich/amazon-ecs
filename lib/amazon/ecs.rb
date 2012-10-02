@@ -100,9 +100,10 @@ module Amazon
     end
 
     # Search an item by ASIN no.
-    def self.item_lookup(item_id, opts = {})
+    def self.item_lookup(item_ids, opts = {})
+      item_ids = [item_ids] unless item_ids.is_a?(Array)
       opts[:operation] = 'ItemLookup'
-      opts[:item_id] = item_id
+      opts[:item_id] = item_ids.join(',')
       
       self.send_request(opts)
     end    
@@ -115,6 +116,17 @@ module Amazon
       self.send_request(opts)
     end    
     
+    # Search a browse node by BrowseNodeId
+    def self.browse_node_lookup_multi(browse_node_ids, opts = {})
+      opts[:operation] = 'BrowseNodeLookup'
+      browse_node_ids.each_with_index do |id, index|
+        opts[:"browse_node_id.#{index + 1}"] = id
+      end
+      raise "Response parsing not implemented!"
+      self.send_request(opts)
+    end    
+    
+
     # Generic send request to ECS REST service. You have to specify the :operation parameter.
     def self.send_request(opts)
       opts = self.options.merge(opts) if self.options
@@ -182,6 +194,10 @@ module Amazon
         items.first
       end
       
+      def children_browse_nodes
+        @children_browse_nodes ||= (@doc/"BrowseNodes/BrowseNode/Children/BrowseNode").collect { |item| Element.new(item) }
+      end
+
       # Return current page no if :item_page option is when initiating the request.
       def item_page
         @item_page ||= Element.get(@doc, "//ItemPage").to_i
@@ -247,7 +263,7 @@ module Amazon
           qs << "&" unless qs.length == 0
           qs << "#{e[0]}=#{v}"
         end
-        
+        #log "QS: @#{qs}"        
         signature = ''
         unless secret_key.nil?
           request_to_sign="GET\n#{request_host}\n/onca/xml\n#{qs}"
