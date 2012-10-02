@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require 'amazon/ecs'
+require 'amazon/version'
 
 Gem::Specification.new do |gem|
   gem.name = %q{amazon-ecs}
